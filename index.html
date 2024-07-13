@@ -3,12 +3,31 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport", content="width=device-width, initial-scale=1.0">
-        <title>Chrome Dinosaur Game</title>
-        <link rel="stylesheet" href="dino.css">
-        <script src="dino.js"></script>
+        <title>jumping Game</title>
+        <link rel="stylesheet" href="/dino.css">
+        <script src="/dino.js"></script>
     </head>
     <body>
-        <h1>Chrome Dinosaur Game</h1>
-        <canvas id="board"></canvas>
+        <div id="character-selection" class="character-selection">
+            <h2>Select Your Character</h2>
+            <div class="Row1">
+                <img src="/img/sanji.png" id="character1" class="character" data-src="/img/sanji.png" alt="Character 1">
+                <img src="/img/nami.png" id="character2" class="character" data-src="/img/nami.png" alt="Character 2">
+                <img src="/img/zoro.png" id="character3" class="character" data-src="/img/zoro.png" alt="Character 3">
+            </div>
+            <div class="Row2">
+                <img src="/img/usop.png" id="character4" class="character" data-src="/img/usop.png" alt="Character 4">
+                <img src="/img/chopper.png" id="character5" class="character" data-src="/img/chopper.png" alt="Character 5">
+                <img src="/img/robin.png" id="character6" class="character" data-src="/img/robin.png" alt="Character 6">
+            </div>
+            <div class="Row3">
+                <img src="/img/franky.png" id="character7" class="character" data-src="/img/franky.png" alt="Character 7">
+                <img src="/img/rufy.png" id="character8" class="character" data-src="/img/rufy.png" alt="Character 8">
+                <img src="/img/enel.png" id="character9" class="character" data-src="/img/enel.png" alt="Character 9">
+            </div>
+        </div>
+        <h1>Jumping Game</h1>
+        <canvas id="board" class="scroll-animation" ></canvas>
+        <h4 id="game-over">GAME OVER<br><br>CONTINUE: SPACE<br>RESET: ESC</h4>
     </body>
 </html>

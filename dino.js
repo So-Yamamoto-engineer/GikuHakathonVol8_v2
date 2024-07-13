@@ -2,45 +2,85 @@
 //board
 let board;
 let boardWidth = 750;
-let boardHeight = 250;
+let boardHeight = 550;
 let context;
 
-//dino
-let dinoWidth = 88;
-let dinoHeight = 94;
-let dinoX = 50;
-let dinoY = boardHeight - dinoHeight;
-let dinoImg;
+//stage
+let stage;
 
-let dino = {
-    x : dinoX,
-    y : dinoY,
-    width : dinoWidth,
-    height : dinoHeight
+//player
+let playerWidth = 88;
+let playerHeight = 94;
+let playerX = 50;
+let playerY = boardHeight - playerHeight;
+let playerImg = new Image();
+let selectedCharacterImgSrc = "";
+
+let player = {
+    x : playerX,
+    y : playerY,
+    width : playerWidth,
+    height : playerHeight
 }
 
-//cactus
-let cactusArray = [];
+//aerial enemy
+class Enemy{
+    constructor(name, width, height, x, y, vx, imgSrc) {
+        this.name=name;
+        this.width=width;
+        this.height=height;
+        this.x=x;
+        this.y=y;
+        this.vx=vx;
+        this.imgSrc=imgSrc;
+        let enemyImg=new Image();
+        enemyImg.src=imgSrc;
+        this.img=enemyImg;
+    }
+    move(){
+        this.x=this.x+this.vx;
+    }
+    setAlt(){
+        this.y=Math.min(Math.max(boardHeight - this.height - boardHeight*Math.random(),this.height),boardHeight - this.height*2);  
+    }
+}
+ 
+let enemyArray = [];
 
-let cactus1Width = 34;
-let cactus2Width = 69;
-let cactus3Width = 102;
+//building
+let buildingArray = [];
 
-let cactusHeight = 70;
-let cactusX = 700;
-let cactusY = boardHeight - cactusHeight;
+let building1Width = 54;
+let building2Width = 85;
+let building3Width = 92;
+  
+let buildingHeight = 90;
+let buildingX = 700;
+let buildingY = boardHeight - buildingHeight;
 
-let cactus1Img;
-let cactus2Img;
-let cactus3Img;
+let building1Img = new Image();
+let building2Img = new Image();
+let building3Img = new Image();
+
+building1Img.src = "/img/building01.png";
+building2Img.src = "/img/building02.png";
+building3Img.src = "/img/building03.png";
+
+
 
 //physics
-let velocityX = -8; //cactus moving left speed
+let velocityX = -4; //building moving left speed
 let velocityY = 0;
-let gravity = .4;
+let gravity = .35;
 
 let gameOver = false;
 let score = 0;
+
+//imgs and enemy status
+let ene1=new Enemy("standard", 80, 80, 700, 0, -5,"/img/enemy01.png")
+let ene2=new Enemy("slow", 80, 80, 700, 0, -3.5,"/img/enemy02.png")
+let ene3=new Enemy("fast", 80, 80, 700, 0, -8.5,"/img/enemy03.png")
+
 
 window.onload = function() {
     board = document.getElementById("board");
@@ -49,29 +89,102 @@ window.onload = function() {
 
     context = board.getContext("2d"); //used for drawing on the board
 
-    //draw initial dinosaur
-    // context.fillStyle="green";
-    // context.fillRect(dino.x, dino.y, dino.width, dino.height);
-
-    dinoImg = new Image();
-    dinoImg.src = "./img/dino.png";
-    dinoImg.onload = function() {
-        context.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+    playerImg.onload = function() {
+    context.drawImage(playerImg, player.x, player.y, player.width, player.height);
     }
 
-    cactus1Img = new Image();
-    cactus1Img.src = "./img/cactus1.png";
+    setCharacterSelection();
+    showCharacterSelection();
 
-    cactus2Img = new Image();
-    cactus2Img.src = "./img/cactus2.png";
+    //jump
+    document.addEventListener("keydown", function(e){
+        if(e.code=="Space"){
+            movePlayer();
+        }
+    });
+    document.addEventListener("touchstart", movePlayer);
+    document.addEventListener("click", movePlayer);
 
-    cactus3Img = new Image();
-    cactus3Img.src = "./img/cactus3.png";
+    //continue
+    document.addEventListener("keydown",conti);
+    document.addEventListener("touchstart",continueTheGame);
+    document.addEventListener("click", continueTheGame);
 
-    requestAnimationFrame(update);
-    setInterval(placeCactus, 1000); //1000 milliseconds = 1 second
-    document.addEventListener("keydown", moveDino);
+
+    //restart
+    document.addEventListener("keydown",restart);
 }
+
+const setStage = () => {
+    let arg=Math.random();
+    console.log(arg);
+    if(arg>0.5){
+        document.getElementById("board").style.background='url(img/sky.png) repeat-x';
+        document.getElementById("board").style.backgroundSize='cover';
+        ene1.img.src="/img/enemy01.png";
+        ene2.img.src="/img/enemy02.png";
+        ene3.img.src="/img/enemy03.png";
+        building1Img.src = "/img/building01.png";
+        building2Img.src = "/img/building02.png";
+        building3Img.src = "/img/building03.png";
+    }else{
+        document.getElementById("board").style.background='url(/img/school.png) repeat-x';
+        document.getElementById("board").style.backgroundSize='cover';
+        ene1.img.src="/img/enemy01.png";
+        ene2.img.src="/img/enemy02.png";
+        ene3.img.src="/img/enemy03.png";
+        building2Img.src = "/img/school_buil02.png";
+        building1Img.src = "/img/school_buil01.png";
+        building3Img.src = "/img/school_buil03.png";
+    }
+}
+
+
+const gameStart = () => {
+    requestAnimationFrame(update);
+    setInterval(placeBuilding,  900); //1000 milliseconds = 1 second
+    setInterval(placeEnemies,  450);
+    setStage();
+}
+
+const setCharacterSelection = () =>{
+    const characters = document.querySelectorAll(".character");
+    characters.forEach(character => {
+        character.addEventListener("click", function() {
+            selectedCharacterImgSrc=character.getAttribute("data-src");
+            selectCharacter(selectedCharacterImgSrc);
+            gameStart();
+        });
+        character.addEventListener("touchstart", function() {
+            selectedCharacterImgSrc=character.getAttribute("data-src");
+            selectCharacter(character.getAttribute("data-src"));
+            gameStart();
+        });
+    });
+}
+
+const showCharacterSelection = () => {
+    hideGameContainer();
+}
+
+const hideCharacterSelection = () => {
+    document.querySelector("h2").classList.add("hidden");
+    document.getElementById("character-selection").classList.add("hidden");
+    document.querySelector("h1").classList.remove("hidden");
+    document.getElementById("board").classList.remove("hidden");
+}
+
+const hideGameContainer = () => {
+    document.querySelector("h2").classList.remove("hidden");
+    document.getElementById("character-selection").classList.remove("hidden");
+    document.querySelector("h1").classList.add("hidden");
+    document.getElementById("board").classList.add("hidden");
+}
+
+function selectCharacter(characterSrc) {
+    playerImg.src = characterSrc;
+    hideCharacterSelection();
+} 
 
 function update() {
     requestAnimationFrame(update);
@@ -80,23 +193,34 @@ function update() {
     }
     context.clearRect(0, 0, board.width, board.height);
 
-    //dino
+    //player
     velocityY += gravity;
-    dino.y = Math.min(dino.y + velocityY, dinoY); //apply gravity to current dino.y, making sure it doesn't exceed the ground
-    context.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+    player.y = Math.min(player.y + velocityY, playerY); //apply gravity to current player.y, making sure it doesn't exceed the ground
+    context.drawImage(playerImg, player.x, player.y, player.width, player.height);
 
-    //cactus
-    for (let i = 0; i < cactusArray.length; i++) {
-        let cactus = cactusArray[i];
-        cactus.x += velocityX;
-        context.drawImage(cactus.img, cactus.x, cactus.y, cactus.width, cactus.height);
+    //building
+    for (let i = 0; i < buildingArray.length; i++) {
+        let building = buildingArray[i];
+        building.x += velocityX;
+        context.drawImage(building.img, building.x, building.y, building.width, building.height);
 
-        if (detectCollision(dino, cactus)) {
+        if (detectCollision(player, building)) {
             gameOver = true;
-            dinoImg.src = "./img/dino-dead.png";
-            dinoImg.onload = function() {
-                context.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
-            }
+            pauseBackAnimation();
+            document.getElementById("game-over").style.display="block";
+        }
+    }
+
+    //enemy
+    for (let i = 0; i < enemyArray.length; i++) {
+        let ene=enemyArray[i];
+        ene.move();
+        context.drawImage(enemyArray[i].img, ene.x, ene.y, ene.width, ene.height);
+
+        if (detectCollision(player, ene)) {
+            gameOver = true;
+            pauseBackAnimation();
+            document.getElementById("game-over").style.display="block";
         }
     }
 
@@ -107,61 +231,137 @@ function update() {
     context.fillText(score, 5, 20);
 }
 
-function moveDino(e) {
+function movePlayer() {
     if (gameOver) {
         return;
     }
-
-    if ((e.code == "Space" || e.code == "ArrowUp") && dino.y == dinoY) {
+    if(player.y>50){    
         //jump
-        velocityY = -10;
+        if(player.y==boardHeight - playerHeight){
+            velocityY = -10.7;
+        }else{
+            velocityY = -10.7*0.7;
+        }  
     }
-    else if (e.code == "ArrowDown" && dino.y == dinoY) {
-        //duck
-    }
-
 }
 
-function placeCactus() {
+function placeBuilding() {
     if (gameOver) {
         return;
     }
 
-    //place cactus
-    let cactus = {
+    //place building
+    let building = {
         img : null,
-        x : cactusX,
-        y : cactusY,
+        x : buildingX,
+        y : buildingY,  //Math.max(cactusY - boardHeight*Math.random(),cactusHeight) 
         width : null,
-        height: cactusHeight
+        height: buildingHeight
     }
 
-    let placeCactusChance = Math.random(); //0 - 0.9999...
+    let placeBuildingChance = Math.random(); //0 - 0.9999...
 
-    if (placeCactusChance > .90) { //10% you get cactus3
-        cactus.img = cactus3Img;
-        cactus.width = cactus3Width;
-        cactusArray.push(cactus);
+    if (placeBuildingChance > .90) { //10% you get cactus3
+        building.img = building3Img;
+        building.width = building3Width;
+        buildingArray.push(building);
     }
-    else if (placeCactusChance > .70) { //30% you get cactus2
-        cactus.img = cactus2Img;
-        cactus.width = cactus2Width;
-        cactusArray.push(cactus);
+    else if (placeBuildingChance > .70) { //30% you get cactus2
+        building.img = building2Img;
+        building.width = building2Width;
+        buildingArray.push(building);
     }
-    else if (placeCactusChance > .50) { //50% you get cactus1
-        cactus.img = cactus1Img;
-        cactus.width = cactus1Width;
-        cactusArray.push(cactus);
+    else if (placeBuildingChance > .50) { //50% you get cactus1
+        building.img = building1Img;
+        building.width = building1Width;
+        buildingArray.push(building);
     }
 
-    if (cactusArray.length > 5) {
-        cactusArray.shift(); //remove the first element from the array so that the array doesn't constantly grow
+    if (buildingArray.length > 5) {
+        buildingArray.shift(); //remove the first element from the array so that the array doesn't constantly grow
     }
 }
+
+//place enemies
+function placeEnemies() {
+    if (gameOver) {
+        return;
+    }
+
+    let enemy;
+
+    //place enemy
+    let placeEnemyChance = Math.random(); //0 - 0.9999...
+
+    if (placeEnemyChance > .90) { //10% you get cactus3
+        ene3.setAlt();
+        enemy= new Enemy(ene3.name,ene3.width,ene3.height,ene3.x,ene3.y,ene3.vx,ene3.imgSrc);
+        enemyArray.push(enemy);
+    }  
+    else if (placeEnemyChance > .70) { //30% you get cactus2
+        ene2.setAlt();
+        enemy= new Enemy(ene2.name,ene2.width,ene2.height,ene2.x,ene2.y,ene2.vx,ene2.imgSrc);
+        enemyArray.push(enemy);
+    }
+    else if (placeEnemyChance > .50) { //50% you get cactus1
+        ene1.setAlt();
+        enemy= new Enemy(ene1.name,ene1.width,ene1.height,ene1.x,ene1.y,ene1.vx,ene1.imgSrc);
+        enemyArray.push(enemy);
+    }
+
+    if (enemyArray.length > 6) {
+        enemyArray.shift(); //remove the first element from the array so that the array doesn't constantly grow
+    }
+}
+
 
 function detectCollision(a, b) {
-    return a.x < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
-           a.x + a.width > b.x &&   //a's top right corner passes b's top left corner
-           a.y < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
-           a.y + a.height > b.y;    //a's bottom left corner passes b's top left corner
+    return a.x  + 20 < b.x + b.width &&   //a's top left corner doesn't reach b's top right corner
+           a.x + a.width - 20 > b.x &&   //a's top right corner passes b's top left corner
+           a.y + 20 < b.y + b.height &&  //a's top left corner doesn't reach b's bottom left corner
+           a.y + a.height - 20 > b.y;    //a's bottom left corner passes b's top left corner
+}
+
+function restart(e){
+    if(e.code=="Escape" && gameOver==true){
+        this.location.reload();
+    }
+}
+
+function conti(e){
+    if(e.code=="Space"){
+        continueTheGame();
+    }
+}
+
+function continueTheGame(){
+    if(gameOver){
+        document.getElementById("game-over").style.display="none";
+        reset();
+        selectCharacter(selectedCharacterImgSrc);
+    }
+}
+
+function reset(){
+    gameOver=false;
+    score=0;
+    player.x=playerX;
+    player.y=playerY;
+    velocityY=0;
+    enemyArray=[];
+    buildingArray=[];
+    resetBackAnimation();
+    setStage();
+}
+
+function pauseBackAnimation(){
+    document.getElementById("board").style.animationPlayState="paused";
+}
+
+function resetBackAnimation(){
+    element=document.getElementById("board");
+    element.classList.remove("scroll-animation");
+    // void element.offsetWidth; 
+    document.getElementById("board").style.animationPlayState="running";
+    element.classList.add('scroll-animation');
 }
